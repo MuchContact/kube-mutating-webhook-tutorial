@@ -34,8 +34,8 @@ var ignoredNamespaces = []string{
 }
 
 const (
-	admissionWebhookAnnotationInjectKey = "sidecar-injector-webhook.morven.me/inject"
-	admissionWebhookAnnotationStatusKey = "sidecar-injector-webhook.morven.me/status"
+	admissionWebhookAnnotationInjectKey = "sidecar-injector-webhook.morven.me-inject"
+	admissionWebhookAnnotationStatusKey = "sidecar-injector-webhook.morven.me-status"
 )
 
 type WebhookServer struct {
@@ -104,8 +104,7 @@ func mutationRequired(ignoredList []string, metadata *metav1.ObjectMeta) bool {
 			return false
 		}
 	}
-
-	annotations := metadata.GetAnnotations()
+	annotations := metadata.GetLabels()
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
@@ -173,11 +172,11 @@ func addVolume(target, added []corev1.Volume, basePath string) (patch []patchOpe
 
 func updateAnnotation(target map[string]string, added map[string]string) (patch []patchOperation) {
 	for key, value := range added {
-		if target == nil || target[key] == "" {
+		if target == nil {
 			target = map[string]string{}
 			patch = append(patch, patchOperation{
 				Op:   "add",
-				Path: "/metadata/annotations",
+				Path: "/metadata/labels",
 				Value: map[string]string{
 					key: value,
 				},
@@ -185,7 +184,7 @@ func updateAnnotation(target map[string]string, added map[string]string) (patch 
 		} else {
 			patch = append(patch, patchOperation{
 				Op:    "replace",
-				Path:  "/metadata/annotations/" + key,
+				Path:  "/metadata/labels/" + key,
 				Value: value,
 			})
 		}
@@ -199,7 +198,7 @@ func createPatch(pod *corev1.Pod, sidecarConfig *Config, annotations map[string]
 
 	patch = append(patch, addContainer(pod.Spec.Containers, sidecarConfig.Containers, "/spec/containers")...)
 	patch = append(patch, addVolume(pod.Spec.Volumes, sidecarConfig.Volumes, "/spec/volumes")...)
-	patch = append(patch, updateAnnotation(pod.Annotations, annotations)...)
+	patch = append(patch, updateAnnotation(pod.Labels, annotations)...)
 
 	return json.Marshal(patch)
 }

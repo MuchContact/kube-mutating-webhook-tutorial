@@ -1,12 +1,12 @@
 # Image URL to use all building/pushing image targets;
 # Use your own docker registry and image name for dev/test by overridding the
 # IMAGE_REPO, IMAGE_NAME and IMAGE_TAG environment variable.
-IMAGE_REPO ?= docker.io/morvencao
+IMAGE_REPO ?= registry.cn-hangzhou.aliyuncs.com/muco
 IMAGE_NAME ?= sidecar-injector
 
 # Github host to use for checking the source tree;
 # Override this variable ue with your own value if you're working on forked repo.
-GIT_HOST ?= github.com/morvencao
+GIT_HOST ?= github.com/muco
 
 PWD := $(shell pwd)
 BASE_DIR := $(shell basename $(PWD))
@@ -24,6 +24,7 @@ LOCAL_OS := $(shell uname)
 ifeq ($(LOCAL_OS),Linux)
     TARGET_OS ?= linux
     XARGS_FLAGS="-r"
+    $(info "Run linux ..")
 else ifeq ($(LOCAL_OS),Darwin)
     TARGET_OS ?= darwin
     XARGS_FLAGS=
@@ -67,7 +68,7 @@ test:
 
 build:
 	@echo "Building the $(IMAGE_NAME) binary..."
-	@CGO_ENABLED=0 go build -o build/_output/bin/$(IMAGE_NAME) ./cmd/
+	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/_output/bin/$(IMAGE_NAME) ./cmd/
 
 build-linux:
 	@echo "Building the $(IMAGE_NAME) binary for Docker (linux)..."
